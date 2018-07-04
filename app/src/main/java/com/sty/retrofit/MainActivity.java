@@ -2,10 +2,16 @@ package com.sty.retrofit;
 
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.widget.ImageView;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
+import com.sty.retrofit.adapter.MyRcvAdapter;
 import com.sty.retrofit.api.ApiCallback;
 import com.sty.retrofit.api.ApiClient;
 import com.sty.retrofit.base.BaseResult;
@@ -21,6 +27,7 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
     private int page;
     private List<Beauty> dataList;
+    private MyRcvAdapter adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,13 +35,23 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         initViews();
-        getData();
+        setRecyclerView();
+        refresh();
     }
 
     private void initViews(){
-        recyclerView = findViewById(R.id.recycler_view);
-        page = 1;
+        page = 0;
         dataList = new ArrayList<>();
+        recyclerView = findViewById(R.id.recycler_view);
+    }
+
+    private void refresh(){
+        if(page == 0){
+            page = 1;
+        }else{
+            page++;
+        }
+        getData();
     }
 
     private void getData(){
@@ -44,6 +61,7 @@ public class MainActivity extends AppCompatActivity {
             public void success(Call<BaseResult<List<Beauty>>> call, Response<BaseResult<List<Beauty>>> response, BaseResult<List<Beauty>> result) {
                 if(result.isSuccess()){
                     dataList.addAll(result.getBody());
+                    setRecyclerView();
                     Log.i("sty", "dataList :" + dataList.size());
                     Toast.makeText(MainActivity.this, "加载数据成功", Toast.LENGTH_SHORT).show();
                 }else{
@@ -61,5 +79,31 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(MainActivity.this, "获取数据失败： " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    private void setRecyclerView(){
+        if(adapter == null) {
+            adapter = new MyRcvAdapter(this, dataList);
+            recyclerView.setLayoutManager(new GridLayoutManager(MainActivity.this, 2));
+            recyclerView.setAdapter(adapter);
+        }else{
+            adapter.setData(dataList);
+            adapter.notifyDataSetChanged();
+        }
+    }
+
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.refersh, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if(item.getItemId() == R.id.action_refresh){
+            refresh();
+        }
+        return super.onOptionsItemSelected(item);
     }
 }
